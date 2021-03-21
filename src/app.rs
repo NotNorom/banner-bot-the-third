@@ -4,12 +4,9 @@ use crate::handler::*;
 use crate::help::*;
 use crate::hooks::*;
 
-use std::{
-    collections::HashSet,
-    sync::{atomic::AtomicBool, Arc},
-};
+use std::{collections::{HashMap, HashSet}, sync::{atomic::AtomicBool, Arc}};
 
-use serenity::{framework::StandardFramework, http::Http, Client};
+use serenity::{Client, framework::StandardFramework, http::Http, prelude::Mutex};
 
 pub struct App {
     http: Arc<Http>,
@@ -80,12 +77,15 @@ pub async fn create_app(token: String) -> App {
         .await
         .expect("Err creating client");
 
-    let reqwest_client = reqwest::Client::new();
+    let guild_banner_storage = Arc::new(Mutex::new(HashMap::new()));
+    let guild_icon_storage = Arc::new(Mutex::new(HashMap::new()));
 
     {
         let mut data = serenity_client.data.write().await;
         data.insert::<ShardManagerContainer>(serenity_client.shard_manager.clone());
-        data.insert::<ReqwestClientContainer>(reqwest_client.clone());
+        data.insert::<ReqwestClientContainer>(reqwest::Client::new());
+        data.insert::<GuildIconStorage>(guild_banner_storage);
+        data.insert::<GuildIconStorage>(guild_icon_storage);
     }
 
     let shard_manager = serenity_client.shard_manager.clone();
