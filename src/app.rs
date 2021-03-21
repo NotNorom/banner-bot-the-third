@@ -6,17 +6,10 @@ use crate::hooks::*;
 
 use std::{
     collections::HashSet,
-    env,
     sync::{atomic::AtomicBool, Arc},
-    time::Duration,
 };
 
-use serenity::{
-    framework::StandardFramework, http::Http, model::id::ChannelId, prelude::Mutex, Client,
-};
-use tokio::time::sleep;
-use tracing::error;
-use tracing_subscriber::{EnvFilter, FmtSubscriber};
+use serenity::{framework::StandardFramework, http::Http, Client};
 
 pub struct App {
     http: Arc<Http>,
@@ -105,33 +98,4 @@ pub async fn create_app(token: String) -> App {
     });
 
     App::new(http, serenity_client)
-}
-
-#[tokio::test]
-async fn test_app_creation() {
-    dotenv::dotenv().expect("Failed to load .env file");
-
-    let subscriber = FmtSubscriber::builder()
-        .with_env_filter(EnvFilter::from_default_env())
-        .pretty()
-        .finish();
-
-    tracing::subscriber::set_global_default(subscriber).expect("Failed to start the logger");
-
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
-
-    let mut app = create_app(token).await;
-    let http = app.http();
-
-    // tokio::spawn(async move {
-    //     let channel = ChannelId(710630746372702213);
-    //     loop {
-    //         if let Err(why) = channel.say(http.clone(), "pusss").await {
-    //             error!("{:?}", why);
-    //         }
-    //         sleep(Duration::from_secs(9)).await;
-    //     }
-    // });
-
-    app.run().await;
 }
