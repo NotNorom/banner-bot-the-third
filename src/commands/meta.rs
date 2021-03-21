@@ -23,7 +23,7 @@ pub async fn shutdown(ctx: &Context, msg: &Message) -> CommandResult {
     if let Some(manager) = data.get::<ShardManagerContainer>() {
         if let Err(why) = msg
             .channel_id
-            .say(&ctx.http, "Shutting down shard...")
+            .say(&ctx.http, "Shutting down... 😢")
             .await
         {
             error!("Client error: {:?}", why);
