@@ -1,8 +1,8 @@
+use crate::data::*;
 use crate::groups::*;
 use crate::handler::*;
 use crate::help::*;
 use crate::hooks::*;
-use crate::data::*;
 
 use std::{
     collections::HashSet,
@@ -11,7 +11,9 @@ use std::{
     time::Duration,
 };
 
-use serenity::{Client, framework::StandardFramework, http::Http, model::id::ChannelId, prelude::Mutex};
+use serenity::{
+    framework::StandardFramework, http::Http, model::id::ChannelId, prelude::Mutex, Client,
+};
 use tokio::time::sleep;
 use tracing::error;
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
@@ -23,7 +25,10 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(http: Http, serenity_client: serenity::Client/*, reqwest_client: reqwest::Client*/) -> Self {
+    pub fn new(
+        http: Http,
+        serenity_client: serenity::Client, /*, reqwest_client: reqwest::Client*/
+    ) -> Self {
         Self {
             http: Arc::new(http),
             serenity_client,
@@ -81,7 +86,7 @@ pub async fn create_app(token: String) -> App {
         .framework(framework)
         .await
         .expect("Err creating client");
-    
+
     let reqwest_client = reqwest::Client::new();
 
     {

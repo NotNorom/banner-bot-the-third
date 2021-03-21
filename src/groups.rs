@@ -1,5 +1,5 @@
-use crate::commands::meta::*;
 use crate::commands::icon::*;
+use crate::commands::meta::*;
 
 use serenity::framework::standard::macros::group;
 

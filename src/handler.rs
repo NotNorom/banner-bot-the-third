@@ -1,11 +1,19 @@
-use std::{sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
-}, time::Duration};
+use std::{
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
 
-use serenity::{async_trait, client::{Context, EventHandler}, http::CacheHttp, model::prelude::*};
+use serenity::{
+    async_trait,
+    client::{Context, EventHandler},
+    http::CacheHttp,
+    model::prelude::*,
+};
 use tokio::time::sleep;
-use tracing::{info, error};
+use tracing::{error, info};
 
 pub struct Handler {
     pub running: AtomicBool,
@@ -23,7 +31,10 @@ impl EventHandler for Handler {
                 let channel = ChannelId(710630746372702213);
                 let mut counter = 0usize;
                 loop {
-                    if let Err(why) = channel.say(ctx1.http(), format!("Alive: {}", counter), ).await {
+                    if let Err(why) = channel
+                        .say(ctx1.http(), format!("Alive: {}", counter))
+                        .await
+                    {
                         error!("{:?}", why);
                     }
                     counter += 1;

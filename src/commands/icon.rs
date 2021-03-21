@@ -3,10 +3,12 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 use tracing::error;
 
+use crate::image_utils::{get_image, ImageType};
+
 #[command]
 #[only_in(guilds)]
 #[sub_commands(set, get)]
-#[description("I")]
+#[description("Icon management")]
 #[num_args(0)]
 pub async fn icon(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     if let Err(why) = msg
@@ -52,7 +54,7 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     let url = match args.single::<reqwest::Url>() {
         Ok(url) => url,
         Err(e) => {
-            if let Err(why ) = msg.reply(&ctx.http, format!("Error: {}", e)).await {
+            if let Err(why) = msg.reply(&ctx.http, format!("Error: {}", e)).await {
                 error!("{}", why);
             };
 
@@ -72,16 +74,19 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
             .clone()
     };
 
-    let raw_icon = crate::image_utils::download(&client, url.into_string())
-        .await
-        .unwrap();
-    if !crate::image_utils::is_valid(crate::image_utils::ImageType::GuildIcon, raw_icon.1) {
-        return Ok(());
-    }
-    let b64_icon = crate::image_utils::encode(&raw_icon.0, raw_icon.1);
+    let icon = match get_image(&client, url, ImageType::GuildIcon).await {
+        Ok(icon) => icon,
+        Err(e) => {
+            if let Err(why) = msg.reply(&ctx.http, format!("Error: {}", e)).await {
+                error!("{}", why);
+            };
+
+            return Ok(());
+        }
+    };
 
     partial_guild
-        .edit(&ctx.http, |g| g.icon(Some(&b64_icon)))
+        .edit(&ctx.http, |g| g.icon(Some(&icon)))
         .await?;
 
     if let Err(why) = msg.react(&ctx.http, '👌').await {
