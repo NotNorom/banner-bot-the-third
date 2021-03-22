@@ -53,10 +53,6 @@ pub async fn get(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
         }
     };
 
-    if let Err(why) = msg.react(&ctx.http, '👌').await {
-        error!("Client error: {:?}", why);
-    }
-
     Ok(())
 }
 
@@ -107,10 +103,6 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     partial_guild
         .edit(&ctx.http, |g| g.icon(Some(&icon)))
         .await?;
-
-    if let Err(why) = msg.react(&ctx.http, '👌').await {
-        error!("Client error: {:?}", why);
-    }
 
     Ok(())
 }
@@ -165,10 +157,6 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
         error!("Client error: {:?}", why);
     }
 
-    if let Err(why) = msg.react(&ctx.http, '👌').await {
-        error!("Client error: {:?}", why);
-    }
-
     Ok(())
 }
 
@@ -203,10 +191,6 @@ pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     {
         let mut storage = storage_lock.write().await;
         storage.entry(guild_id).or_default().push(url);
-    }
-
-    if let Err(why) = msg.react(&ctx.http, '👌').await {
-        error!("Client error: {:?}", why);
     }
 
     Ok(())
@@ -258,10 +242,6 @@ pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
         }
     }
 
-    if let Err(why) = msg.react(&ctx.http, '👌').await {
-        error!("Client error: {:?}", why);
-    };
-
     Ok(())
 }
 
@@ -287,10 +267,6 @@ pub async fn clear(ctx: &Context, msg: &Message, _: Args) -> CommandResult {
         let urls = storage.entry(guild_id).or_default();
         urls.clear();
     }
-
-    if let Err(why) = msg.react(&ctx.http, '👌').await {
-        error!("Client error: {:?}", why);
-    };
 
     Ok(())
 }

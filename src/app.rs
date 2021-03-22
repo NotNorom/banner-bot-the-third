@@ -67,6 +67,7 @@ pub async fn create_app(token: String) -> App {
                 .owners(owners)
         })
         .before(before)
+        .after(after)
         //.normal_message(normal_message)
         .help(&HELP)
         .group(&GENERAL_GROUP)
