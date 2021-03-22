@@ -4,7 +4,6 @@ use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     utils::MessageBuilder,
 };
-use tracing::error;
 
 use crate::{
     data::{GuildBannerStorage, ReqwestClientContainer},
@@ -29,13 +28,13 @@ pub async fn banner(ctx: &Context, msg: &Message, _args: Args) -> CommandResult 
 #[description("Gets server banner")]
 #[num_args(0)]
 pub async fn get(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
+    };
 
-    let guild_id = msg.guild_id.unwrap();
-    let partial_guild = guild_id.to_partial_guild(&ctx.http).await.unwrap();
+    let partial_guild = guild_id.to_partial_guild(&ctx.http).await?;
+    // @note: wait for serenity library to add GuildId.banner_url() method
     let banner = partial_guild.banner.as_ref().map(|banner| {
         format!(
             "https://cdn.discordapp.com/banners/{}/{}.webp",
@@ -44,17 +43,9 @@ pub async fn get(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     });
 
     match banner {
-        Some(banner) => {
-            if let Err(why) = msg.channel_id.say(&ctx.http, banner).await {
-                error!("Client error: {:?}", why);
-            }
-        }
-        None => {
-            if let Err(why) = msg.channel_id.say(&ctx.http, "No banner").await {
-                error!("Client error: {:?}", why);
-            }
-        }
-    }
+        Some(banner) => msg.channel_id.say(&ctx.http, banner).await?,
+        None => return Err("No banner".into()),
+    };
 
     Ok(())
 }
@@ -64,29 +55,17 @@ pub async fn get(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 #[description("Sets server banner")]
 #[num_args(1)]
 pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
-
-    let url = match args.single::<reqwest::Url>() {
-        Ok(url) => url,
-        Err(e) => {
-            msg.reply(&ctx.http, format!("{}", e)).await?;
-            return Ok(());
-        }
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
     };
-
-    let guild_id = msg.guild_id.unwrap();
     let mut partial_guild = guild_id.to_partial_guild(&ctx.http).await?;
 
+    let url = args.single::<reqwest::Url>()?;
+
     let client = {
-        ctx.data
-            .read()
-            .await
-            .get::<ReqwestClientContainer>()
-            .unwrap()
-            .clone()
+        let data = ctx.data.read().await;
+        data.get::<ReqwestClientContainer>().unwrap().clone()
     };
 
     let banner = get_image(&client, url, ImageType::GuildBanner).await?;
@@ -103,12 +82,10 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 #[description("Lists all known banners")]
 #[num_args(0)]
 pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
-
-    let guild_id = msg.guild_id.unwrap();
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
+    };
 
     let storage_lock = {
         let data = ctx.data.read().await;
@@ -120,9 +97,7 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 
         let entries = match storage.get(&guild_id) {
             Some(entries) => entries,
-            None => {
-                return Err("No banners".into());
-            }
+            None => return Err("No banners".into()),
         };
 
         if entries.len() <= 0 {
@@ -148,14 +123,12 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 #[description("Adds server banner to storage")]
 #[num_args(1)]
 pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
+    };
 
     let url = args.single::<reqwest::Url>()?;
-
-    let guild_id = msg.guild_id.unwrap();
 
     let storage_lock = {
         let data = ctx.data.read().await;
@@ -175,14 +148,12 @@ pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 #[description("Removes server banner from storage")]
 #[num_args(1)]
 pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
+    };
 
     let idx = args.single::<usize>()?;
-
-    let guild_id = msg.guild_id.unwrap();
 
     let storage_lock = {
         let data = ctx.data.read().await;
@@ -193,14 +164,9 @@ pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
         let mut storage = storage_lock.write().await;
         let urls = storage.entry(guild_id).or_default();
         if idx >= urls.len() {
-            msg.reply(
-                &ctx.http,
-                "Error: The url you want to remove does not exist",
-            )
-            .await?;
-        } else {
-            urls.remove(idx);
+            return Err(format!("Url at position {} does not exist", idx).into());
         }
+        urls.remove(idx);
     }
 
     Ok(())
@@ -211,12 +177,10 @@ pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 #[description("Remove all server banners from storage")]
 #[num_args(0)]
 pub async fn clear(ctx: &Context, msg: &Message, _: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
-
-    let guild_id = msg.guild_id.unwrap();
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
+    };
 
     let storage_lock = {
         let data = ctx.data.read().await;
