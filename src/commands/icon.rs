@@ -4,7 +4,6 @@ use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     utils::MessageBuilder,
 };
-use tracing::error;
 
 use crate::{
     data::{GuildIconStorage, ReqwestClientContainer},
@@ -17,13 +16,9 @@ use crate::{
 #[description("Icon management")]
 #[num_args(0)]
 pub async fn icon(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
-    if let Err(why) = msg
-        .channel_id
+    msg.channel_id
         .say(&ctx.http, "Please use a subcommand")
-        .await
-    {
-        error!("Client error: {:?}", why);
-    }
+        .await?;
 
     Ok(())
 }
@@ -33,24 +28,15 @@ pub async fn icon(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 #[description("Gets server icon")]
 #[num_args(0)]
 pub async fn get(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
-
-    let guild_id = msg.guild_id.unwrap();
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
+    };
     let partial_guild = guild_id.to_partial_guild(&ctx.http).await.unwrap();
+
     match partial_guild.icon_url() {
-        Some(icon) => {
-            if let Err(why) = msg.channel_id.say(&ctx.http, icon).await {
-                error!("Client error: {:?}", why);
-            }
-        }
-        None => {
-            if let Err(why) = msg.channel_id.say(&ctx.http, "No icon.").await {
-                error!("Client error: {:?}", why);
-            }
-        }
+        Some(icon) => msg.channel_id.say(&ctx.http, icon).await?,
+        None => return Err("No icon".into()),
     };
 
     Ok(())
@@ -61,44 +47,20 @@ pub async fn get(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 #[description("Sets server icon")]
 #[num_args(1)]
 pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
-
-    let url = match args.single::<reqwest::Url>() {
-        Ok(url) => url,
-        Err(e) => {
-            if let Err(why) = msg.reply(&ctx.http, format!("Error: {}", e)).await {
-                error!("{}", why);
-            }
-
-            return Ok(());
-        }
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
     };
-
-    let guild_id = msg.guild_id.unwrap();
     let mut partial_guild = guild_id.to_partial_guild(&ctx.http).await.unwrap();
 
+    let url = args.single::<reqwest::Url>()?;
+
     let client = {
-        ctx.data
-            .read()
-            .await
-            .get::<ReqwestClientContainer>()
-            .unwrap()
-            .clone()
+        let data = ctx.data.read().await;
+        data.get::<ReqwestClientContainer>().unwrap().clone()
     };
 
-    let icon = match get_image(&client, url, ImageType::GuildIcon).await {
-        Ok(icon) => icon,
-        Err(e) => {
-            if let Err(why) = msg.reply(&ctx.http, format!("Error: {}", e)).await {
-                error!("{}", why);
-            };
-
-            return Ok(());
-        }
-    };
+    let icon = get_image(&client, url, ImageType::GuildIcon).await?;
 
     partial_guild
         .edit(&ctx.http, |g| g.icon(Some(&icon)))
@@ -112,12 +74,10 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 #[description("Lists all known icons")]
 #[num_args(0)]
 pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
-
-    let guild_id = msg.guild_id.unwrap();
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
+    };
 
     let storage_lock = {
         let data = ctx.data.read().await;
@@ -129,19 +89,11 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 
         let entries = match storage.get(&guild_id) {
             Some(entries) => entries,
-            None => {
-                if let Err(why) = msg.reply(&ctx.http, "No icons.").await {
-                    error!("Client error: {:?}", why);
-                }
-                return Ok(());
-            }
+            None => return Err("No icon".into()),
         };
 
         if entries.len() <= 0 {
-            if let Err(why) = msg.reply(&ctx.http, "No icons.").await {
-                error!("Client error: {:?}", why);
-            }
-            return Ok(());
+            return Err("No icons".into());
         }
 
         entries
@@ -153,9 +105,7 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
             .build()
     };
 
-    if let Err(why) = msg.reply(&ctx.http, content).await {
-        error!("Client error: {:?}", why);
-    }
+    msg.reply(&ctx.http, content).await?;
 
     Ok(())
 }
@@ -165,23 +115,12 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 #[description("Adds server icon to storage")]
 #[num_args(1)]
 pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
-
-    let url = match args.single::<reqwest::Url>() {
-        Ok(url) => url,
-        Err(e) => {
-            if let Err(why) = msg.reply(&ctx.http, format!("Error: {}", e)).await {
-                error!("{}", why);
-            }
-
-            return Ok(());
-        }
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
     };
 
-    let guild_id = msg.guild_id.unwrap();
+    let url = args.single::<reqwest::Url>()?;
 
     let storage_lock = {
         let data = ctx.data.read().await;
@@ -201,23 +140,12 @@ pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 #[description("Removes server icon from storage")]
 #[num_args(1)]
 pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
-
-    let idx = match args.single::<usize>() {
-        Ok(idx) => idx,
-        Err(e) => {
-            if let Err(why) = msg.reply(&ctx.http, format!("Error: {}", e)).await {
-                error!("{}", why);
-            }
-
-            return Ok(());
-        }
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
     };
 
-    let guild_id = msg.guild_id.unwrap();
+    let idx = args.single::<usize>()?;
 
     let storage_lock = {
         let data = ctx.data.read().await;
@@ -228,18 +156,9 @@ pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
         let mut storage = storage_lock.write().await;
         let urls = storage.entry(guild_id).or_default();
         if idx >= urls.len() {
-            if let Err(why) = msg
-                .reply(
-                    &ctx.http,
-                    "Error: The url you want to remove does not exist",
-                )
-                .await
-            {
-                error!("Client error: {:?}", why);
-            }
-        } else {
-            urls.remove(idx);
+            return Err(format!("Url at position {} does not exist", idx).into());
         }
+        urls.remove(idx);
     }
 
     Ok(())
@@ -250,12 +169,10 @@ pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 #[description("Remove all server icons from storage")]
 #[num_args(0)]
 pub async fn clear(ctx: &Context, msg: &Message, _: Args) -> CommandResult {
-    if msg.guild_id.is_none() {
-        error!("Message has no guild_id");
-        return Ok(());
-    }
-
-    let guild_id = msg.guild_id.unwrap();
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
+    };
 
     let storage_lock = {
         let data = ctx.data.read().await;
