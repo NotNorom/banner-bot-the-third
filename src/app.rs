@@ -70,7 +70,8 @@ pub async fn create_app(token: String) -> App {
         //.normal_message(normal_message)
         .help(&HELP)
         .group(&GENERAL_GROUP)
-        .group(&ICON_GROUP);
+        .group(&ICON_GROUP)
+        .group(&BANNER_GROUP);
 
     let serenity_client = Client::builder(&token)
         .event_handler(Handler {
@@ -87,7 +88,7 @@ pub async fn create_app(token: String) -> App {
         let mut data = serenity_client.data.write().await;
         data.insert::<ShardManagerContainer>(serenity_client.shard_manager.clone());
         data.insert::<ReqwestClientContainer>(reqwest::Client::new());
-        data.insert::<GuildIconStorage>(guild_banner_storage);
+        data.insert::<GuildBannerStorage>(guild_banner_storage);
         data.insert::<GuildIconStorage>(guild_icon_storage);
     }
 

@@ -7,16 +7,16 @@ use serenity::{
 use tracing::error;
 
 use crate::{
-    data::{GuildIconStorage, ReqwestClientContainer},
+    data::{GuildBannerStorage, ReqwestClientContainer},
     image_utils::{get_image, ImageType},
 };
 
 #[command]
 #[only_in(guilds)]
 #[sub_commands(set, get, list, add, del, clear)]
-#[description("Icon management")]
+#[description("Banner management")]
 #[num_args(0)]
-pub async fn icon(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
+pub async fn banner(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     if let Err(why) = msg
         .channel_id
         .say(&ctx.http, "Please use a subcommand")
@@ -30,7 +30,7 @@ pub async fn icon(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 
 #[command]
 #[only_in(guilds)]
-#[description("Gets server icon")]
+#[description("Gets server banner")]
 #[num_args(0)]
 pub async fn get(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     if msg.guild_id.is_none() {
@@ -40,18 +40,25 @@ pub async fn get(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 
     let guild_id = msg.guild_id.unwrap();
     let partial_guild = guild_id.to_partial_guild(&ctx.http).await.unwrap();
-    match partial_guild.icon_url() {
-        Some(icon) => {
-            if let Err(why) = msg.channel_id.say(&ctx.http, icon).await {
+    let banner = partial_guild.banner.as_ref().map(|banner| {
+        format!(
+            "https://cdn.discordapp.com/banners/{}/{}.webp",
+            guild_id, banner
+        )
+    });
+
+    match banner {
+        Some(banner) => {
+            if let Err(why) = msg.channel_id.say(&ctx.http, banner).await {
                 error!("Client error: {:?}", why);
             }
         }
         None => {
-            if let Err(why) = msg.channel_id.say(&ctx.http, "No icon.").await {
+            if let Err(why) = msg.channel_id.say(&ctx.http, "No banner").await {
                 error!("Client error: {:?}", why);
             }
         }
-    };
+    }
 
     if let Err(why) = msg.react(&ctx.http, '👌').await {
         error!("Client error: {:?}", why);
@@ -62,7 +69,7 @@ pub async fn get(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 
 #[command]
 #[only_in(guilds)]
-#[description("Sets server icon")]
+#[description("Sets server banner")]
 #[num_args(1)]
 pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     if msg.guild_id.is_none() {
@@ -73,7 +80,7 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     let url = match args.single::<reqwest::Url>() {
         Ok(url) => url,
         Err(e) => {
-            if let Err(why) = msg.reply(&ctx.http, format!("Error: {}", e)).await {
+            if let Err(why) = msg.reply(&ctx.http, format!("{}", e)).await {
                 error!("{}", why);
             }
 
@@ -93,10 +100,10 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
             .clone()
     };
 
-    let icon = match get_image(&client, url, ImageType::GuildIcon).await {
-        Ok(icon) => icon,
+    let banner = match get_image(&client, url, ImageType::GuildBanner).await {
+        Ok(banner) => banner,
         Err(e) => {
-            if let Err(why) = msg.reply(&ctx.http, format!("Error: {}", e)).await {
+            if let Err(why) = msg.reply(&ctx.http, format!("{}", e)).await {
                 error!("{}", why);
             };
 
@@ -105,7 +112,7 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     };
 
     partial_guild
-        .edit(&ctx.http, |g| g.icon(Some(&icon)))
+        .edit(&ctx.http, |g| g.banner(Some(&banner)))
         .await?;
 
     if let Err(why) = msg.react(&ctx.http, '👌').await {
@@ -117,7 +124,7 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
 #[command]
 #[only_in(guilds)]
-#[description("Lists all known icons")]
+#[description("Lists all known banners")]
 #[num_args(0)]
 pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     if msg.guild_id.is_none() {
@@ -129,7 +136,7 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 
     let storage_lock = {
         let data = ctx.data.read().await;
-        data.get::<GuildIconStorage>().unwrap().clone()
+        data.get::<GuildBannerStorage>().unwrap().clone()
     };
 
     let content = {
@@ -138,7 +145,7 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
         let entries = match storage.get(&guild_id) {
             Some(entries) => entries,
             None => {
-                if let Err(why) = msg.reply(&ctx.http, "No icons.").await {
+                if let Err(why) = msg.reply(&ctx.http, "No banners.").await {
                     error!("Client error: {:?}", why);
                 }
                 return Ok(());
@@ -146,7 +153,7 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
         };
 
         if entries.len() <= 0 {
-            if let Err(why) = msg.reply(&ctx.http, "No icons.").await {
+            if let Err(why) = msg.reply(&ctx.http, "No banners.").await {
                 error!("Client error: {:?}", why);
             }
             return Ok(());
@@ -174,7 +181,7 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 
 #[command]
 #[only_in(guilds)]
-#[description("Adds server icon to storage")]
+#[description("Adds server banner to storage")]
 #[num_args(1)]
 pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     if msg.guild_id.is_none() {
@@ -197,7 +204,7 @@ pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
     let storage_lock = {
         let data = ctx.data.read().await;
-        data.get::<GuildIconStorage>().unwrap().clone()
+        data.get::<GuildBannerStorage>().unwrap().clone()
     };
 
     {
@@ -214,7 +221,7 @@ pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
 #[command]
 #[only_in(guilds)]
-#[description("Removes server icon from storage")]
+#[description("Removes server banner from storage")]
 #[num_args(1)]
 pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     if msg.guild_id.is_none() {
@@ -237,7 +244,7 @@ pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
     let storage_lock = {
         let data = ctx.data.read().await;
-        data.get::<GuildIconStorage>().unwrap().clone()
+        data.get::<GuildBannerStorage>().unwrap().clone()
     };
 
     {
@@ -267,7 +274,7 @@ pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
 #[command]
 #[only_in(guilds)]
-#[description("Remove all server icons from storage")]
+#[description("Remove all server banners from storage")]
 #[num_args(0)]
 pub async fn clear(ctx: &Context, msg: &Message, _: Args) -> CommandResult {
     if msg.guild_id.is_none() {
@@ -279,7 +286,7 @@ pub async fn clear(ctx: &Context, msg: &Message, _: Args) -> CommandResult {
 
     let storage_lock = {
         let data = ctx.data.read().await;
-        data.get::<GuildIconStorage>().unwrap().clone()
+        data.get::<GuildBannerStorage>().unwrap().clone()
     };
 
     {

@@ -1,24 +1,6 @@
 use image::{guess_format, ImageFormat};
 use reqwest::{IntoUrl, Url};
 
-// pub fn read_image<P: AsRef<Path>>(path: P) -> Result<String> {
-//     _read_image(path.as_ref())
-// }
-
-// fn _read_image(path: &Path) -> Result<String> {
-//     let mut v = Vec::default();
-//     let mut f = File::open(path)?;
-
-//     // errors here are intentionally ignored
-//     #[allow(clippy::let_underscore_must_use)]
-//     let _ = f.read_to_end(&mut v);
-
-//     let b64 = base64::encode(&v);
-//     let ext = if path.extension() == Some(OsStr::new("png")) { "png" } else { "jpg" };
-
-//     Ok(format!("data:image/{};base64,{}", ext, b64))
-// }
-
 pub async fn get_image<U: IntoUrl>(
     client: &reqwest::Client,
     url: U,
