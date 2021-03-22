@@ -29,6 +29,10 @@ pub async fn after(ctx: &Context, msg: &Message, _command_name: &str, command_re
             if let Err(why) = msg.react(&ctx.http, '❌').await {
                 error!("Client error: {:?}", why);
             };
+
+            if let Err(why) = msg.reply(&ctx.http, format!("{}", e)).await {
+                error!("Client error: {:?}", why);
+            };
         }
     };
 }

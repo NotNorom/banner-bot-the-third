@@ -1,15 +1,12 @@
 use serenity::framework::standard::{macros::command, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
-use tracing::error;
 
 use crate::data::ShardManagerContainer;
 
 #[command]
 pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-    if let Err(why) = msg.channel_id.say(&ctx.http, "pong").await {
-        error!("Client error: {:?}", why);
-    };
+    msg.reply(&ctx.http, "pong").await?;
     Ok(())
 }
 
@@ -20,22 +17,12 @@ pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 pub async fn shutdown(ctx: &Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read().await;
 
-    if let Some(manager) = data.get::<ShardManagerContainer>() {
-        if let Err(why) = msg.channel_id.say(&ctx.http, "Shutting down... 😢").await {
-            error!("Client error: {:?}", why);
-        };
+    let manager = data
+        .get::<ShardManagerContainer>()
+        .ok_or("Could not get shard manager")?;
 
-        manager.lock().await.shutdown_all().await;
-    } else {
-        if let Err(why) = msg
-            .reply(ctx, "There was a problem getting the shard manager")
-            .await
-        {
-            error!("Client error: {:?}", why);
-        }
-
-        return Ok(());
-    }
+    msg.reply(&ctx.http, "Shutting down... 😢").await?;
+    manager.lock().await.shutdown_all().await;
 
     Ok(())
 }
