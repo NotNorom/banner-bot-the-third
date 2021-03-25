@@ -1,7 +1,11 @@
 use std::{collections::HashMap, sync::Arc};
 
 use reqwest::Client;
-use serenity::{client::bridge::gateway::ShardManager, model::id::GuildId, prelude::{Mutex, RwLock, TypeMapKey}};
+use serenity::{
+    client::bridge::gateway::ShardManager,
+    model::id::GuildId,
+    prelude::{Mutex, RwLock, TypeMapKey},
+};
 
 pub struct ShardManagerContainer;
 
@@ -9,16 +13,10 @@ impl TypeMapKey for ShardManagerContainer {
     type Value = Arc<Mutex<ShardManager>>;
 }
 
-pub struct ReqwestClientContainer;
+pub struct ReqwestClient;
 
-impl TypeMapKey for ReqwestClientContainer {
+impl TypeMapKey for ReqwestClient {
     type Value = Client;
-}
-
-pub struct DelayQueueContainer;
-
-impl TypeMapKey for DelayQueueContainer {
-    type Value = Arc<RwLock<tokio_util::time::DelayQueue<i32>>>;
 }
 
 pub struct GuildIconStorage;

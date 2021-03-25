@@ -9,9 +9,6 @@ use serenity::framework::standard::macros::group;
 pub struct General;
 
 #[group]
-#[commands(icon)]
-pub struct Icon;
+#[commands(icon, banner)]
+pub struct Storage;
 
-#[group]
-#[commands(banner)]
-pub struct Banner;

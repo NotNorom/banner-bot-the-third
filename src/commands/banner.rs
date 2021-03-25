@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::{
@@ -6,13 +8,13 @@ use serenity::{
 };
 
 use crate::{
-    data::{GuildBannerStorage, ReqwestClientContainer},
+    data::{GuildBannerStorage, ReqwestClient},
     image_utils::{get_image, ImageType},
 };
 
 #[command]
 #[only_in(guilds)]
-#[sub_commands(set, get, list, add, del, clear)]
+#[sub_commands(set, get, list, add, del, clear, shuffle)]
 #[description("Banner management")]
 #[num_args(0)]
 pub async fn banner(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
@@ -65,7 +67,7 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
     let client = {
         let data = ctx.data.read().await;
-        data.get::<ReqwestClientContainer>().unwrap().clone()
+        data.get::<ReqwestClient>().unwrap().clone()
     };
 
     let banner = get_image(&client, url, ImageType::GuildBanner).await?;
@@ -192,6 +194,27 @@ pub async fn clear(ctx: &Context, msg: &Message, _: Args) -> CommandResult {
         let urls = storage.entry(guild_id).or_default();
         urls.clear();
     }
+
+    Ok(())
+}
+
+#[command]
+#[only_in(guilds)]
+#[description("Shuffle banners")]
+#[num_args(1)]
+pub async fn shuffle(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let guild_id = match msg.guild_id {
+        Some(id) => id,
+        None => return Err("Not a guild".into()),
+    };
+
+    let interval_minutes = args.single::<u64>()?;
+    let interval = Duration::from_secs(60 * interval_minutes);
+
+    let ctx1 = ctx.clone();
+    let _ = tokio::spawn(async move {
+        crate::timers::shuffle(ctx1, guild_id, ImageType::GuildBanner, interval).await;
+    });
 
     Ok(())
 }

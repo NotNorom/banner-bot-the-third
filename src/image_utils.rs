@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use image::{guess_format, ImageFormat};
 use reqwest::{IntoUrl, Url};
 
@@ -57,9 +59,22 @@ pub fn is_valid(image_type: ImageType, format: ImageFormat) -> bool {
 }
 
 #[non_exhaustive]
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub enum ImageType {
     GuildIcon,
     GuildBanner,
+}
+
+impl FromStr for ImageType {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "icon" => Ok(Self::GuildIcon),
+            "banner" => Ok(Self::GuildBanner),
+            _ => Err("Unkown image type")
+        }
+    }
 }
 
 mod discord_specific {
