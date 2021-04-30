@@ -6,7 +6,7 @@ use reqwest::{IntoUrl, Url};
 pub async fn get_image<U: IntoUrl>(
     client: &reqwest::Client,
     url: U,
-    image_type: ImageType,
+    image_type: DiscordImage,
 ) -> Result<String, String> {
     let url = match url.into_url() {
         Ok(url) => url,
@@ -15,7 +15,7 @@ pub async fn get_image<U: IntoUrl>(
 
     let (data, format) = download(client, url).await?;
 
-    if !is_valid(image_type, format) {
+    if image_type.has_valid_format(format) {
         return Err("Invalid image type".into());
     }
 
@@ -50,52 +50,42 @@ pub fn encode(data: &[u8], format: ImageFormat) -> String {
     )
 }
 
-pub fn is_valid(image_type: ImageType, format: ImageFormat) -> bool {
-    use self::discord_specific::*;
-    match image_type {
-        ImageType::GuildIcon => valid_guild_icon(format),
-        ImageType::GuildBanner => valid_guild_banner(format),
-    }
-}
-
 #[non_exhaustive]
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
-pub enum ImageType {
+pub enum DiscordImage {
     GuildIcon,
     GuildBanner,
 }
 
-impl FromStr for ImageType {
+impl DiscordImage {
+    fn has_valid_format(&self, format: ImageFormat) -> bool {
+        use image::ImageFormat::*;
+        match self {
+            DiscordImage::GuildIcon => match format {
+                Png => true,
+                Jpeg => true,
+                Gif => true,
+                WebP => true,
+                _ => false,
+            },
+            DiscordImage::GuildBanner => match format {
+                Png => true,
+                Jpeg => true,
+                WebP => true,
+                _ => false,
+            },
+        }
+    }
+}
+
+impl FromStr for DiscordImage {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "icon" => Ok(Self::GuildIcon),
             "banner" => Ok(Self::GuildBanner),
-            _ => Err("Unkown image type")
-        }
-    }
-}
-
-mod discord_specific {
-    use image::ImageFormat::{self, *};
-
-    pub fn valid_guild_icon(format: ImageFormat) -> bool {
-        match format {
-            Png => true,
-            Jpeg => true,
-            Gif => true,
-            WebP => true,
-            _ => false,
-        }
-    }
-
-    pub fn valid_guild_banner(format: ImageFormat) -> bool {
-        match format {
-            Png => true,
-            Jpeg => true,
-            WebP => true,
-            _ => false,
+            _ => Err("Unkown image type"),
         }
     }
 }
