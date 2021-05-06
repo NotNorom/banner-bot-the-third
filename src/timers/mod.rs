@@ -7,19 +7,26 @@ use tracing::error;
 
 use crate::{
     data::{GuildBannerStorage, GuildIconStorage, ReqwestClient},
-    image_utils::{get_image, ImageType},
+    image_utils::{get_image, DiscordImage},
 };
 
-pub async fn shuffle(ctx: Context, guild_id: GuildId, image_type: ImageType, interval: Duration) {
+pub async fn shuffle(
+    ctx: Context,
+    guild_id: GuildId,
+    image_type: DiscordImage,
+    interval: Duration,
+) {
     let mut partial_guild = guild_id.to_partial_guild(&ctx.http).await.unwrap();
 
     loop {
         let storage = {
             let data = ctx.data.read().await;
             match image_type {
-                ImageType::GuildIcon => data.get::<GuildIconStorage>().unwrap().clone(),
-                ImageType::GuildBanner => data.get::<GuildBannerStorage>().unwrap().clone(),
+                DiscordImage::GuildIcon => data.get::<GuildIconStorage>(),
+                DiscordImage::GuildBanner => data.get::<GuildBannerStorage>(),
             }
+            .unwrap()
+            .clone()
         };
 
             let urls = match storage.get(&guild_id) {
@@ -39,30 +46,27 @@ pub async fn shuffle(ctx: Context, guild_id: GuildId, image_type: ImageType, int
 
             let url = {
                 let mut rng = rand::thread_rng();
-                let url = urls.choose(&mut rng);
-                match url {
-                    Some(url) => url,
-                    None => {
-                        error!("no icons :(");
-                        return;
-                    }
-                }
+            urls.choose(&mut rng)
             };
 
+        match url {
+            Some(url) => {
             let image = get_image(&reqwest_client, url.as_str(), image_type)
                 .await
                 .unwrap();
-
             if let Err(e) = partial_guild
                 .edit(&ctx.http, |g| match image_type {
-                    ImageType::GuildIcon => g.icon(Some(&image)),
-                    ImageType::GuildBanner => g.banner(Some(&image)),
+                        DiscordImage::GuildIcon => g.icon(Some(&image)),
+                        DiscordImage::GuildBanner => g.banner(Some(&image)),
                 })
                 .await
             {
                 error!("{}", e);
+                    return ();
             }
-        };
+            }
+            None => return (),
+        }
 
         sleep(interval).await;
     }

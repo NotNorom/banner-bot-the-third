@@ -9,7 +9,7 @@ use serenity::{
 
 use crate::{
     data::{GuildIconStorage, ReqwestClient},
-    image_utils::{get_image, ImageType},
+    image_utils::{get_image, DiscordImage},
 };
 
 #[command]
@@ -62,7 +62,7 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
         data.get::<ReqwestClient>().unwrap().clone()
     };
 
-    let icon = get_image(&client, url, ImageType::GuildIcon).await?;
+    let icon = get_image(&client, url, DiscordImage::GuildIcon).await?;
 
     partial_guild
         .edit(&ctx.http, |g| g.icon(Some(&icon)))
@@ -127,7 +127,7 @@ pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
         data.get::<GuildIconStorage>().unwrap().clone()
     };
 
-        storage.entry(guild_id).or_default().push(url);
+    storage.entry(guild_id).or_default().push(url);
 
     Ok(())
 }
@@ -150,10 +150,10 @@ pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     };
 
     let mut urls = storage.entry(guild_id).or_default();
-        if idx >= urls.len() {
-            return Err(format!("Url at position {} does not exist", idx).into());
-        }
-        urls.remove(idx);
+    if idx >= urls.len() {
+        return Err(format!("Url at position {} does not exist", idx).into());
+    }
+    urls.remove(idx);
 
     Ok(())
 }
@@ -174,7 +174,7 @@ pub async fn clear(ctx: &Context, msg: &Message, _: Args) -> CommandResult {
     };
 
     let mut urls = storage.entry(guild_id).or_default();
-        urls.clear();
+    urls.clear();
 
     Ok(())
 }
@@ -194,7 +194,7 @@ pub async fn shuffle(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 
     let ctx1 = ctx.clone();
     let _ = tokio::spawn(async move {
-        crate::timers::shuffle(ctx1, guild_id, ImageType::GuildIcon, interval).await;
+        crate::timers::shuffle(ctx1, guild_id, DiscordImage::GuildIcon, interval).await;
     });
 
     Ok(())
