@@ -5,11 +5,12 @@ use crate::help::*;
 use crate::hooks::*;
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashSet,
     sync::{atomic::AtomicBool, Arc},
 };
 
-use serenity::{framework::StandardFramework, http::Http, prelude::RwLock, Client};
+use dashmap::DashMap;
+use serenity::{framework::StandardFramework, http::Http, Client};
 
 pub struct App {
     http: Arc<Http>,
@@ -81,8 +82,8 @@ pub async fn create_app(token: String) -> App {
         .await
         .expect("Err creating client");
 
-    let guild_banner_storage = Arc::new(RwLock::new(HashMap::new()));
-    let guild_icon_storage = Arc::new(RwLock::new(HashMap::new()));
+    let guild_banner_storage = Arc::new(DashMap::new());
+    let guild_icon_storage = Arc::new(DashMap::new());
 
     {
         let mut data = serenity_client.data.write().await;

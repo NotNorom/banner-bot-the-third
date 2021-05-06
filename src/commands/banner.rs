@@ -89,14 +89,12 @@ pub async fn list(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
         None => return Err("Not a guild".into()),
     };
 
-    let storage_lock = {
+    let storage = {
         let data = ctx.data.read().await;
         data.get::<GuildBannerStorage>().unwrap().clone()
     };
 
     let content = {
-        let storage = storage_lock.read().await;
-
         let entries = match storage.get(&guild_id) {
             Some(entries) => entries,
             None => return Err("No banners".into()),
@@ -132,15 +130,12 @@ pub async fn add(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
     let url = args.single::<reqwest::Url>()?;
 
-    let storage_lock = {
+    let storage = {
         let data = ctx.data.read().await;
         data.get::<GuildBannerStorage>().unwrap().clone()
     };
 
-    {
-        let mut storage = storage_lock.write().await;
         storage.entry(guild_id).or_default().push(url);
-    }
 
     Ok(())
 }
@@ -157,19 +152,16 @@ pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
     let idx = args.single::<usize>()?;
 
-    let storage_lock = {
+    let storage = {
         let data = ctx.data.read().await;
         data.get::<GuildBannerStorage>().unwrap().clone()
     };
 
-    {
-        let mut storage = storage_lock.write().await;
-        let urls = storage.entry(guild_id).or_default();
+    let mut urls = storage.entry(guild_id).or_default();
         if idx >= urls.len() {
             return Err(format!("Url at position {} does not exist", idx).into());
         }
         urls.remove(idx);
-    }
 
     Ok(())
 }
@@ -184,16 +176,13 @@ pub async fn clear(ctx: &Context, msg: &Message, _: Args) -> CommandResult {
         None => return Err("Not a guild".into()),
     };
 
-    let storage_lock = {
+    let storage = {
         let data = ctx.data.read().await;
         data.get::<GuildBannerStorage>().unwrap().clone()
     };
 
-    {
-        let mut storage = storage_lock.write().await;
-        let urls = storage.entry(guild_id).or_default();
+    let mut urls = storage.entry(guild_id).or_default();
         urls.clear();
-    }
 
     Ok(())
 }

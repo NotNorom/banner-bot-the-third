@@ -1,10 +1,11 @@
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
+use dashmap::DashMap;
 use reqwest::Client;
 use serenity::{
     client::bridge::gateway::ShardManager,
     model::id::GuildId,
-    prelude::{Mutex, RwLock, TypeMapKey},
+    prelude::{Mutex, TypeMapKey},
 };
 
 pub struct ShardManagerContainer;
@@ -22,11 +23,11 @@ impl TypeMapKey for ReqwestClient {
 pub struct GuildIconStorage;
 
 impl TypeMapKey for GuildIconStorage {
-    type Value = Arc<RwLock<HashMap<GuildId, Vec<reqwest::Url>>>>;
+    type Value = Arc<DashMap<GuildId, Vec<reqwest::Url>>>;
 }
 
 pub struct GuildBannerStorage;
 
 impl TypeMapKey for GuildBannerStorage {
-    type Value = Arc<RwLock<HashMap<GuildId, Vec<reqwest::Url>>>>;
+    type Value = Arc<DashMap<GuildId, Vec<reqwest::Url>>>;
 }

@@ -14,7 +14,7 @@ pub async fn shuffle(ctx: Context, guild_id: GuildId, image_type: ImageType, int
     let mut partial_guild = guild_id.to_partial_guild(&ctx.http).await.unwrap();
 
     loop {
-        let storage_lock = {
+        let storage = {
             let data = ctx.data.read().await;
             match image_type {
                 ImageType::GuildIcon => data.get::<GuildIconStorage>().unwrap().clone(),
@@ -22,8 +22,6 @@ pub async fn shuffle(ctx: Context, guild_id: GuildId, image_type: ImageType, int
             }
         };
 
-        {
-            let storage = storage_lock.read().await;
             let urls = match storage.get(&guild_id) {
                 Some(urls) => urls,
                 None => {
