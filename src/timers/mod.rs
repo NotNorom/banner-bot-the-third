@@ -29,41 +29,41 @@ pub async fn shuffle(
             .clone()
         };
 
-            let urls = match storage.get(&guild_id) {
-                Some(urls) => urls,
-                None => {
-                    error!("no icons :(");
-                    return;
-                }
-            };
+        let urls = match storage.get(&guild_id) {
+            Some(urls) => urls,
+            None => {
+                error!("no icons :(");
+                return;
+            }
+        };
 
-            let reqwest_client = {
-                let data = ctx.data.read().await;
-                data.get::<ReqwestClient>().unwrap().clone()
-            };
-            
-            // TODO: Add some fallback logic for when a url can not be downloaded
+        let reqwest_client = {
+            let data = ctx.data.read().await;
+            data.get::<ReqwestClient>().unwrap().clone()
+        };
 
-            let url = {
-                let mut rng = rand::thread_rng();
+        // TODO: Add some fallback logic for when a url can not be downloaded
+
+        let url = {
+            let mut rng = rand::thread_rng();
             urls.choose(&mut rng)
-            };
+        };
 
         match url {
             Some(url) => {
-            let image = get_image(&reqwest_client, url.as_str(), image_type)
-                .await
-                .unwrap();
-            if let Err(e) = partial_guild
-                .edit(&ctx.http, |g| match image_type {
+                let image = get_image(&reqwest_client, url.as_str(), image_type)
+                    .await
+                    .unwrap();
+                if let Err(e) = partial_guild
+                    .edit(&ctx.http, |g| match image_type {
                         DiscordImage::GuildIcon => g.icon(Some(&image)),
                         DiscordImage::GuildBanner => g.banner(Some(&image)),
-                })
-                .await
-            {
-                error!("{}", e);
+                    })
+                    .await
+                {
+                    error!("{}", e);
                     return ();
-            }
+                }
             }
             None => return (),
         }
