@@ -11,4 +11,3 @@ pub struct General;
 #[group]
 #[commands(icon, banner)]
 pub struct Storage;
-

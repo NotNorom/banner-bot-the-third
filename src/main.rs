@@ -6,7 +6,7 @@ use tracing_subscriber::{EnvFilter, FmtSubscriber};
 #[tokio::main]
 async fn main() {
     match dotenv::dotenv() {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(e) => eprintln!("Failed to load .env file. {:?}", e),
     };
 

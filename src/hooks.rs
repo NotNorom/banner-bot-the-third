@@ -1,10 +1,14 @@
-use serenity::{client::Context, framework::standard::{CommandResult, macros::hook}, model::channel::Message};
+use serenity::{
+    client::Context,
+    framework::standard::{macros::hook, CommandResult},
+    model::channel::Message,
+};
 use tracing::{error, info, warn};
 
 #[hook]
 pub async fn before(_ctx: &Context, msg: &Message, command_name: &str) -> bool {
     info!(
-        "before_0: Got command '{}' by user '{}'",
+        "before: Got command '{}' by user '{}'",
         command_name, msg.author.name
     );
     true
@@ -16,7 +20,12 @@ pub async fn normal_message(_ctx: &Context, msg: &Message) {
 }
 
 #[hook]
-pub async fn after(ctx: &Context, msg: &Message, _command_name: &str, command_result: CommandResult) {
+pub async fn after(
+    ctx: &Context,
+    msg: &Message,
+    _command_name: &str,
+    command_result: CommandResult,
+) {
     match command_result {
         Ok(_) => {
             if let Err(why) = msg.react(&ctx.http, '👌').await {
