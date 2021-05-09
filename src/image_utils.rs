@@ -3,20 +3,19 @@ use std::str::FromStr;
 use image::{guess_format, ImageFormat};
 use reqwest::{IntoUrl, Url};
 
+use crate::errors::BannerBotError;
+
 pub async fn get_image<U: IntoUrl>(
     client: &reqwest::Client,
     url: U,
     image_type: DiscordImage,
-) -> Result<String, String> {
-    let url = match url.into_url() {
-        Ok(url) => url,
-        Err(e) => return Err(e.to_string()),
-    };
+) -> Result<String, BannerBotError> {
+    let url = url.into_url()?;
 
     let (data, format) = download(client, url).await?;
 
-    if image_type.has_valid_format(format) {
-        return Err("Invalid image type".into());
+    if !image_type.has_valid_format(format) {
+        return Err(BannerBotError::InvalidImageType);
     }
 
     Ok(encode(&data, format))
@@ -25,19 +24,10 @@ pub async fn get_image<U: IntoUrl>(
 pub async fn download(
     client: &reqwest::Client,
     url: Url,
-) -> Result<(Vec<u8>, ImageFormat), String> {
-    let res = match client.get(url).send().await {
-        Ok(res) => res,
-        Err(e) => return Err(e.to_string()),
-    };
-    let data = match res.bytes().await {
-        Ok(bytes) => bytes.to_vec(),
-        Err(e) => return Err(e.to_string()),
-    };
-    let image_format = match guess_format(&data) {
-        Ok(format) => format,
-        Err(e) => return Err(e.to_string()),
-    };
+) -> Result<(Vec<u8>, ImageFormat), BannerBotError> {
+    let res = client.get(url).send().await?;
+    let data = res.bytes().await?.to_vec();
+    let image_format = guess_format(&data)?;
     Ok((data, image_format))
 }
 
@@ -79,13 +69,13 @@ impl DiscordImage {
 }
 
 impl FromStr for DiscordImage {
-    type Err = &'static str;
+    type Err = BannerBotError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "icon" => Ok(Self::GuildIcon),
             "banner" => Ok(Self::GuildBanner),
-            _ => Err("Unkown image type"),
+            _ => Err(BannerBotError::InvalidGuildImageType),
         }
     }
 }

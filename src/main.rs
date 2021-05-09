@@ -25,8 +25,12 @@ async fn main() {
         }
     };
 
-    let mut app = create_app(token).await;
-    //let http = app.http();
-
-    app.run().await;
+    match create_app(token).await {
+        Ok(mut app) => {
+            if let Err(e) = app.run().await {
+                eprintln!("{:?}", e);
+            }
+        }
+        Err(e) => eprintln!("{:?}", e),
+    }
 }

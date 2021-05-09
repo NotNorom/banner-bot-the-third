@@ -35,3 +35,6 @@ image = "^0.23.14"
 reqwest = "^0.11.3"
 base64 = "^0.13.0"
 dashmap = "^4.0"
+
+anyhow = "1.0.40"
+thiserror = "1.0.24"

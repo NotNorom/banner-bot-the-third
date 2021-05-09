@@ -1,3 +1,5 @@
+use anyhow::{Context, Result};
+
 use crate::data::*;
 use crate::groups::*;
 use crate::handler::*;
@@ -12,6 +14,7 @@ use std::{
 use dashmap::DashMap;
 use serenity::{framework::StandardFramework, http::Http, Client};
 
+/// Wrapper for the serenity code
 pub struct App {
     http: Arc<Http>,
     serenity_client: serenity::Client,
@@ -19,6 +22,7 @@ pub struct App {
 }
 
 impl App {
+    /// Creates a new app
     pub fn new(
         http: Http,
         serenity_client: serenity::Client, /*, reqwest_client: reqwest::Client*/
@@ -35,30 +39,35 @@ impl App {
         Arc::clone(&self.http)
     }
 
-    pub async fn run(&mut self) {
-        if let Err(why) = self.serenity_client.start().await {
-            println!("Client error: {:?}", why);
-        }
+    /// Start the app
+    pub async fn run(&mut self) -> Result<()> {
+        self.serenity_client.start().await.map_err(|e| e.into())
     }
 }
 
-pub async fn create_app(token: String) -> App {
+/// Creates an app instance with given `token`
+pub async fn create_app(token: String) -> Result<App> {
     let http = Http::new_with_token(&token);
-    let (owners, bot_id) = match http.get_current_application_info().await {
-        Ok(info) => {
-            let mut owners = HashSet::new();
-            if let Some(team) = info.team {
-                owners.insert(team.owner_user_id);
-            } else {
-                owners.insert(info.owner.id);
-            }
-            match http.get_current_user().await {
-                Ok(bot_id) => (owners, bot_id.id),
-                Err(why) => panic!("Could not access the bot id: {:?}", why),
-            }
+
+    let owners = {
+        let info = http
+            .get_current_application_info()
+            .await
+            .context("Could not get application info")?;
+
+        let mut owners = HashSet::new();
+        if let Some(team) = info.team {
+            owners.insert(team.owner_user_id);
+        } else {
+            owners.insert(info.owner.id);
         }
-        Err(why) => panic!("Could not access application info: {:?}", why),
+        owners
     };
+    let bot_id = http
+        .get_current_user()
+        .await
+        .context("Could not get bot id")?
+        .id;
 
     let framework = StandardFramework::new()
         .configure(|c| {
@@ -80,7 +89,7 @@ pub async fn create_app(token: String) -> App {
         })
         .framework(framework)
         .await
-        .expect("Err creating client");
+        .context("Failed to create serenity client")?;
 
     let guild_banner_storage = Arc::new(DashMap::new());
     let guild_icon_storage = Arc::new(DashMap::new());
@@ -98,9 +107,10 @@ pub async fn create_app(token: String) -> App {
     tokio::spawn(async move {
         tokio::signal::ctrl_c()
             .await
-            .expect("Could not register ctrl+c handler");
+            .context("Could not register ctrl+c handler")
+            .unwrap();
         shard_manager.lock().await.shutdown_all().await;
     });
 
-    App::new(http, serenity_client)
+    Ok(App::new(http, serenity_client))
 }
