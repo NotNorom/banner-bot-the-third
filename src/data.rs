@@ -1,12 +1,13 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use dashmap::DashMap;
 use reqwest::Client;
 use serenity::{
     client::bridge::gateway::ShardManager,
-    model::id::GuildId,
-    prelude::{Mutex, TypeMapKey},
+    model::id::{GuildId, RoleId},
+    prelude::{Mutex, TypeMap, TypeMapKey},
 };
+use tokio::task::JoinHandle;
 
 pub struct ShardManagerContainer;
 
@@ -30,4 +31,32 @@ pub struct GuildBannerStorage;
 
 impl TypeMapKey for GuildBannerStorage {
     type Value = Arc<DashMap<GuildId, Vec<reqwest::Url>>>;
+}
+
+/*
+    TIMERS
+*/
+
+pub struct GuildTimerStorage;
+
+impl TypeMapKey for GuildTimerStorage {
+    type Value = Arc<DashMap<GuildId, TypeMap>>;
+}
+
+pub struct GuildBannerTimer;
+impl TypeMapKey for GuildBannerTimer {
+    type Value = JoinHandle<()>;
+}
+
+pub struct GuildIconTimer;
+impl TypeMapKey for GuildIconTimer {
+    type Value = JoinHandle<()>;
+}
+
+
+
+pub struct InternalTimerStorage;
+
+impl TypeMapKey for InternalTimerStorage {
+    type Value = Arc<DashMap<String, TypeMap>>;
 }

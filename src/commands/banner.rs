@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::{
@@ -8,7 +6,7 @@ use serenity::{
 };
 
 use crate::{
-    data::{GuildBannerStorage, ReqwestClient},
+    data::{GuildBannerStorage, GuildBannerTimer, ReqwestClient},
     image_utils::{get_image, DiscordImage},
 };
 
@@ -192,18 +190,18 @@ pub async fn clear(ctx: &Context, msg: &Message, _: Args) -> CommandResult {
 #[description("Shuffle banners")]
 #[num_args(1)]
 pub async fn shuffle(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let guild_id = match msg.guild_id {
-        Some(id) => id,
-        None => return Err("Not a guild".into()),
-    };
+    let minutes = args.single::<u64>()?;
 
-    let interval_minutes = args.single::<u64>()?;
-    let interval = Duration::from_secs(60 * interval_minutes);
-
-    let ctx1 = ctx.clone();
-    let _ = tokio::spawn(async move {
-        crate::timers::shuffle(ctx1, guild_id, DiscordImage::GuildBanner, interval).await;
-    });
+    crate::looping::loop_with_ctx_and_msg::<_, _, GuildBannerTimer>(
+        ctx.clone(),
+        msg.clone(),
+        minutes,
+        move |ctx, msg| async move {
+            crate::guild_utils::set_random_guild_image(ctx, msg, DiscordImage::GuildBanner).await?;
+            Ok(())
+        },
+    )
+    .await?;
 
     Ok(())
 }

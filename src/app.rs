@@ -93,6 +93,8 @@ pub async fn create_app(token: String) -> Result<App> {
 
     let guild_banner_storage = Arc::new(DashMap::new());
     let guild_icon_storage = Arc::new(DashMap::new());
+    let guild_timer_storage = Arc::new(DashMap::new());
+    let internal_timer_storage = Arc::new(DashMap::new());
 
     {
         let mut data = serenity_client.data.write().await;
@@ -100,6 +102,8 @@ pub async fn create_app(token: String) -> Result<App> {
         data.insert::<ReqwestClient>(reqwest::Client::new());
         data.insert::<GuildBannerStorage>(guild_banner_storage);
         data.insert::<GuildIconStorage>(guild_icon_storage);
+        data.insert::<GuildTimerStorage>(guild_timer_storage);
+        data.insert::<InternalTimerStorage>(internal_timer_storage);
     }
 
     let shard_manager = serenity_client.shard_manager.clone();
