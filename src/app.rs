@@ -81,7 +81,8 @@ pub async fn create_app(token: String) -> Result<App> {
         //.normal_message(normal_message)
         .help(&HELP)
         .group(&GENERAL_GROUP)
-        .group(&STORAGE_GROUP);
+        .group(&STORAGE_GROUP)
+        .group(&ADMIN_GROUP);
 
     let serenity_client = Client::builder(&token)
         .event_handler(Handler {
