@@ -25,7 +25,6 @@ pub async fn list_roles(ctx: &Context, msg: &Message, _args: Args) -> CommandRes
     Ok(())
 }
 
-
 #[command]
 #[only_in(guilds)]
 #[required_permissions(ADMINISTRATOR)]
@@ -46,7 +45,6 @@ pub async fn allow_roles(ctx: &Context, msg: &Message, _args: Args) -> CommandRe
 
     Ok(())
 }
-
 
 #[command]
 #[only_in(guilds)]

@@ -58,7 +58,6 @@ pub async fn member_has_allowed_role_or_is_admin(
     }
 }
 
-
 #[check]
 pub async fn minimum_duration(
     _: &Context,
@@ -66,7 +65,9 @@ pub async fn minimum_duration(
     args: &mut Args,
     _cmd_options: &CommandOptions,
 ) -> Result<(), Reason> {
-    let minutes = args.single::<u64>().map_err(|e| Reason::Log(e.to_string()))?;
+    let minutes = args
+        .single::<u64>()
+        .map_err(|e| Reason::Log(e.to_string()))?;
     if minutes < 30 {
         return Err(Reason::User("Duration must at least be 30 minutes".into()));
     }

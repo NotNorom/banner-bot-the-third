@@ -59,8 +59,6 @@ impl TypeMapKey for GuildIconTimer {
     type Value = JoinHandle<()>;
 }
 
-
-
 pub struct InternalTimerStorage;
 
 impl TypeMapKey for InternalTimerStorage {
