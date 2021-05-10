@@ -6,6 +6,7 @@ use crate::{data::GuildAllowedRolesStorage, errors::BannerBotError};
 
 #[command]
 #[only_in(guilds)]
+#[required_permissions(ADMINISTRATOR)]
 #[description("List roles which are allowed to use this bot")]
 #[min_args(1)]
 pub async fn list_roles(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
@@ -27,6 +28,7 @@ pub async fn list_roles(ctx: &Context, msg: &Message, _args: Args) -> CommandRes
 
 #[command]
 #[only_in(guilds)]
+#[required_permissions(ADMINISTRATOR)]
 #[description("Allow specific roles to use this bot")]
 #[min_args(1)]
 pub async fn allow_roles(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
@@ -48,6 +50,7 @@ pub async fn allow_roles(ctx: &Context, msg: &Message, _args: Args) -> CommandRe
 
 #[command]
 #[only_in(guilds)]
+#[required_permissions(ADMINISTRATOR)]
 #[description("Clear roles to use this bot. Only administrators can use it then")]
 #[min_args(1)]
 pub async fn clear_roles(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
