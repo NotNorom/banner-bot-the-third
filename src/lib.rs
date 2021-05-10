@@ -5,6 +5,7 @@
 //! Mostly banners tho.
 
 pub mod app;
+mod checks;
 mod commands;
 mod data;
 mod errors;

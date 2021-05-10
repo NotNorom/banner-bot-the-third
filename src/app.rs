@@ -95,6 +95,7 @@ pub async fn create_app(token: String) -> Result<App> {
     let guild_icon_storage = Arc::new(DashMap::new());
     let guild_timer_storage = Arc::new(DashMap::new());
     let internal_timer_storage = Arc::new(DashMap::new());
+    let guild_allowed_roles_storage = Arc::new(DashMap::new());
 
     {
         let mut data = serenity_client.data.write().await;
@@ -104,6 +105,7 @@ pub async fn create_app(token: String) -> Result<App> {
         data.insert::<GuildIconStorage>(guild_icon_storage);
         data.insert::<GuildTimerStorage>(guild_timer_storage);
         data.insert::<InternalTimerStorage>(internal_timer_storage);
+        data.insert::<GuildAllowedRolesStorage>(guild_allowed_roles_storage);
     }
 
     let shard_manager = serenity_client.shard_manager.clone();

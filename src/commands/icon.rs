@@ -6,6 +6,7 @@ use serenity::{
 };
 
 use crate::{
+    checks::*,
     data::{GuildIconStorage, GuildIconTimer, ReqwestClient},
     image_utils::{get_image, DiscordImage},
 };
@@ -179,7 +180,10 @@ pub async fn clear(ctx: &Context, msg: &Message, _: Args) -> CommandResult {
 
 #[command]
 #[only_in(guilds)]
-#[description("Shuffle icons")]
+#[checks(member_has_allowed_role_or_is_admin)]
+#[checks(minimum_duration)]
+#[description("Shuffle icons every few minutes. Minimum duration is 30 minutes")]
+#[usage("shuffle <minutes>")]
 #[num_args(1)]
 pub async fn shuffle(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let minutes = args.single::<u64>()?;

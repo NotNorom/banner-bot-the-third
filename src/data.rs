@@ -33,6 +33,12 @@ impl TypeMapKey for GuildBannerStorage {
     type Value = Arc<DashMap<GuildId, Vec<reqwest::Url>>>;
 }
 
+pub struct GuildAllowedRolesStorage;
+
+impl TypeMapKey for GuildAllowedRolesStorage {
+    type Value = Arc<DashMap<GuildId, HashSet<RoleId>>>;
+}
+
 /*
     TIMERS
 */
