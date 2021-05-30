@@ -18,10 +18,8 @@ use crate::{
 pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild_id.expect("This is a guild_only command");
     let mut partial_guild = guild_id.to_partial_guild(&ctx.http).await?;
-
-    let image_type = args.parse::<DiscordImage>()?;
-    args.advance();
-    let url = args.parse::<Url>()?;
+    let image_type = args.single::<DiscordImage>()?;
+    let url = args.single::<Url>()?;
 
     let image = {
         let data = ctx.data.read().await;

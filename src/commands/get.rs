@@ -14,7 +14,6 @@ use crate::image_utils::DiscordImage;
 pub async fn get(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let guild_id = msg.guild_id.expect("This is a guild_only command");
     let partial_guild = guild_id.to_partial_guild(&ctx.http).await?;
-
     let image_type = args.parse::<DiscordImage>()?;
 
     let url = match image_type {

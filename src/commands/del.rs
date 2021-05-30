@@ -16,9 +16,7 @@ use crate::{
 #[num_args(2)]
 pub async fn del(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild_id.expect("This is a guild_only command");
-    let image_type = args.parse::<DiscordImage>()?;
-
-    args.advance();
+    let image_type = args.single::<DiscordImage>()?;
     let idx = args.single::<usize>()?;
 
     let storage = {
