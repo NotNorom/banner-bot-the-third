@@ -78,10 +78,12 @@ pub async fn create_app(token: String) -> Result<App> {
         })
         .before(before)
         .after(after)
+        .on_dispatch_error(dispatch_error)
+        .unrecognised_command(unknown_command)
         //.normal_message(normal_message)
         .help(&HELP)
         .group(&GENERAL_GROUP)
-        .group(&STORAGE_GROUP)
+        .group(&META_GROUP)
         .group(&ADMIN_GROUP);
 
     let serenity_client = Client::builder(&token)
