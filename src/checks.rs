@@ -65,6 +65,7 @@ pub async fn minimum_duration(
     args: &mut Args,
     _cmd_options: &CommandOptions,
 ) -> Result<(), Reason> {
+    args.advance();
     let minutes = args
         .single::<u64>()
         .map_err(|e| Reason::Log(e.to_string()))?;

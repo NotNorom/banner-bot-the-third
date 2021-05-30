@@ -1,4 +1,9 @@
+pub mod add;
 pub mod admin;
-pub mod banner;
-pub mod icon;
+pub mod del;
+pub mod get;
+pub mod list;
 pub mod meta;
+pub mod set;
+pub mod clear;
+pub mod shuffle;

@@ -24,13 +24,15 @@ impl TypeMapKey for ReqwestClient {
 pub struct GuildIconStorage;
 
 impl TypeMapKey for GuildIconStorage {
-    type Value = Arc<DashMap<GuildId, Vec<reqwest::Url>>>;
+    // guild id -> vec<urls>
+    type Value = Arc<DashMap<GuildId, Vec<String>>>;
 }
 
 pub struct GuildBannerStorage;
 
 impl TypeMapKey for GuildBannerStorage {
-    type Value = Arc<DashMap<GuildId, Vec<reqwest::Url>>>;
+    // guild id -> vec<urls>
+    type Value = Arc<DashMap<GuildId, Vec<String>>>;
 }
 
 pub struct GuildAllowedRolesStorage;
